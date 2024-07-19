@@ -1,0 +1,215 @@
+﻿
+=========================================================
+1. Create your SQL Database and add at least one table.
+
+2. In Visual Studio:
+   a) Create a Blazor Server Project
+   b) Add Dapper and Microsoft.Data.SqlClient NuGet packages
+   c) Once per database (not for each table), add the correct connection string to
+      appsettings.json:
+
+      "ConnectionStrings":{
+         "Default" : "Your connection string here"
+      }
+
+
+
+==========================================================
+= Stored procedures go in the database, not the app.     =
+= You can copy them all into a SQL Management query and  =
+= select and execute them one at a time, or all at once. =
+==========================================================
+-------------- Stored Proc for INSERT
+CREATE PROCEDURE sp@@CLASSNAME_Insert
+--Parameters for Insert stored procedure
+@@spInsertParams
+AS
+BEGIN
+--SQL for Insert stored procedure
+@@SQLINSERT
+END
+
+GO
+
+--------------  Stored Proc for SELECT (LIST)
+CREATE PROCEDURE sp@@CLASSNAME_List
+--No parameters required.
+AS
+BEGIN
+--SQL for Select stored procedure.
+@@SQLSELECTLIST
+END
+
+GO
+
+--------------  Stored Proc for SELECT (one)
+CREATE PROCEDURE sp@@CLASSNAME_GetOne
+-- Needs one parameter for primary key
+@@spOneParam
+AS 
+BEGIN
+-- SQL Select for one table row
+@@SQLSELECTONE
+END
+
+GO
+
+--------------  Stored Proc for UPDATE
+CREATE PROCEDURE sp@@CLASSNAME_Update
+-- Parameters for Update stored procedure.
+@@spAllParams
+AS
+BEGIN
+-- SQL for Update stored procedure
+@@SQLUPDATE
+END
+
+GO
+
+--------------  Stored Proc for DELETE
+CREATE PROCEDURE sp@@CLASSNAME_Delete
+-- One parameter required to identify row to delete.
+@@spOneParam
+AS
+BEGIN
+-- SQL for Delete stored procedure (physically deletes, you may want to change this to mark inactive)
+@@SQLDELETE
+END
+
+GO
+
+========================================================
+Back in Visual Studio, you need to add some classes
+and an interface to the Data folder, with the 
+names shown below.
+
+
+You should have three classes, per database table, in the Data folder.
+
+
+---------------------------- /DATA/@@CLASSNAME.cs
+// This is the model for one row in the database table. You may need to make some adjustments.
+using System.ComponentModel.DataAnnotations;
+
+namespace @@NAMESPACE.Data
+{
+    public class @@CLASSNAME
+    {
+	@@MODELCODE
+    }
+}
+
+---------------------------- /DATA/@@CLASSNAMEService.cs
+// This is the service for the @@CLASSNAME class.
+using Dapper;
+using Microsoft.Data.SqlClient;
+using System.Data;
+
+namespace @@NAMESPACE.Data
+{
+    public class @@CLASSNAMEService : I@@CLASSNAMEService
+    {
+        // Database connection
+        private readonly IConfiguration _configuration;
+        public @@CLASSNAMEService(IConfiguration configuration)
+        {
+            _configuration = configuration;
+        }
+
+        public string connectionId = "Default";
+        
+        // Add (create) a @@CLASSNAME table row (SQL Insert)
+        public async Task<bool> @@CLASSNAMEInsert(@@CLASSNAME @@objectname)
+        {
+            using IDbConnection conn = new SqlConnection(_configuration.GetConnectionString(connectionId));
+            {
+                var parameters = new DynamicParameters();
+			@@PARAMETERSADD
+                // Stored procedure method
+                await conn.ExecuteAsync("sp@@CLASSNAME_Insert", parameters, commandType: CommandType.StoredProcedure);
+            }
+            return true;
+        }   
+        
+        // Get a list of @@objectname rows (SQL Select)        
+        public async Task<IEnumerable<@@CLASSNAME>> @@CLASSNAMEList()
+        {
+            IEnumerable<@@CLASSNAME> @@objectlist;
+            using IDbConnection conn = new SqlConnection(_configuration.GetConnectionString(connectionId));
+            {
+                @@objectlist = await conn.QueryAsync<@@CLASSNAME>("sp@@CLASSNAME_List", commandType: CommandType.StoredProcedure);
+            }
+            return @@objectlist;
+        }
+      	
+        // Get one @@objectname based on its @@CLASSNAMEID (SQL Select)
+        public async Task<@@CLASSNAME> @@CLASSNAMEGetOne(@@DBTYPE @@@PK)
+        {
+            @@CLASSNAME @@objectname = new @@CLASSNAME();
+            var parameters = new DynamicParameters();
+            parameters.Add("@@@PK", @@PK, DbType.@@DBTYPE);
+            using IDbConnection conn = new SqlConnection(_configuration.GetConnectionString(connectionId));
+            {
+                @@objectname = await conn.QueryFirstOrDefaultAsync<@@CLASSNAME>("sp@@CLASSNAME_GetOne",parameters,commandType: CommandType.StoredProcedure);
+            }
+            return @@objectname;
+        }
+
+        // Update one @@CLASSNAME row based on its @@CLASSNAMEID (SQL Update)
+        public async Task<bool> @@CLASSNAMEUpdate(@@CLASSNAME @@objectname)
+        {
+            using IDbConnection conn = new SqlConnection(_configuration.GetConnectionString(connectionId));
+            {
+                var parameters = new DynamicParameters();
+                @@PARAMETERADDUPDATEONLY
+			    @@PARAMETERSADD
+                await conn.ExecuteAsync("sp@@CLASSNAME_Update", parameters, commandType: CommandType.StoredProcedure);
+            }
+            return true;
+        }
+
+        // Physically delete one @@CLASSNAME row based on its @@CLASSNAMEID (SQL Delete)
+        public async Task<bool> @@CLASSNAMEDelete(@@DBTYPE @@PK)
+        {
+            var parameters = new DynamicParameters();
+            parameters.Add("@@@PK", @@PK, DbType.@@DBTYPE);
+            using IDbConnection conn = new SqlConnection(_configuration.GetConnectionString(connectionId));
+            {
+                await conn.ExecuteAsync("sp@@CLASSNAME_Delete",parameters, commandType: CommandType.StoredProcedure);
+            }
+            return true;
+        }
+    }
+}
+
+---------------------------- /Data/I@@CLASSNAMEService.cs
+// This is the @@CLASSNAME Interface
+using System;
+using System.Collections.Generic;
+using System.Threading.Tasks;
+
+namespace @@NAMESPACE.Data
+{
+    // Each item below provides an interface to a method in @@CLASSNAMEServices.cs
+    public interface I@@CLASSNAMEService
+    {
+        Task<bool> @@CLASSNAMEInsert(@@CLASSNAME @@objectname);
+        Task<IEnumerable<@@CLASSNAME>> @@CLASSNAMEList();        
+        Task<@@CLASSNAME> @@CLASSNAMEGetOne(@@DBTYPE @@PK);
+        Task<bool> @@CLASSNAMEUpdate(@@CLASSNAME @@objectname);
+        Task<bool> @@CLASSNAMEDelete(@@DBTYPE @@PK);
+    }
+}
+
+
+========================================================
+= With the classes finished, open up Program.cs and 
+= add the builder.Services.AddScope line below in the
+= "// Add services to the container" section
+========================================================
+
+builder.Services.AddScoped<I@@CLASSNAMEService, @@CLASSNAMEService>();
+
+===============================================================================
+End of generated code.
+===============================================================================
