@@ -31,8 +31,8 @@ END
 
 GO
 
---------------  Stored Proc for SELECT (LIST)
-CREATE PROCEDURE sp@@CLASSNAME_List
+--------------  Stored Proc for SELECT (GETALL)
+CREATE PROCEDURE sp@@CLASSNAME_GetAll
 --No parameters required.
 AS
 BEGIN
@@ -132,12 +132,12 @@ namespace @@NAMESPACE.Data
         }   
         
         // Get a list of @@objectname rows (SQL Select)        
-        public async Task<IEnumerable<@@CLASSNAME>> @@CLASSNAMEList()
+        public async Task<IEnumerable<@@CLASSNAME>> @@CLASSNAMEGetAll()
         {
             IEnumerable<@@CLASSNAME> @@objectlist;
             using IDbConnection conn = new SqlConnection(_configuration.GetConnectionString(connectionId));
             {
-                @@objectlist = await conn.QueryAsync<@@CLASSNAME>("sp@@CLASSNAME_List", commandType: CommandType.StoredProcedure);
+                @@objectlist = await conn.QueryAsync<@@CLASSNAME>("sp@@CLASSNAME_GetAll", commandType: CommandType.StoredProcedure);
             }
             return @@objectlist;
         }
@@ -194,7 +194,7 @@ namespace @@NAMESPACE.Data
     public interface I@@CLASSNAMEService
     {
         Task<bool> @@CLASSNAMEInsert(@@CLASSNAME @@objectname);
-        Task<IEnumerable<@@CLASSNAME>> @@CLASSNAMEList();        
+        Task<IEnumerable<@@CLASSNAME>> @@CLASSNAMEGetAll();        
         Task<@@CLASSNAME> @@CLASSNAMEGetOne(@@DBTYPE @@PK);
         Task<bool> @@CLASSNAMEUpdate(@@CLASSNAME @@objectname);
         Task<bool> @@CLASSNAMEDelete(@@DBTYPE @@PK);
